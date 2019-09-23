@@ -2,23 +2,22 @@
 
 import argparse
 import hmac
-import re
 import sys
 import base64
 import hashlib
 
 
-def base64url_decode(input):
-    rem = len(input) % 4
+def base64url_decode(encoded_bytes):
+    rem = len(encoded_bytes) % 4
 
     if rem > 0:
-        input += b'=' * (4 - rem)
+        encoded_bytes += b'=' * (4 - rem)
 
-    return base64.urlsafe_b64decode(input)
+    return base64.urlsafe_b64decode(encoded_bytes)
 
 
-def base64url_encode(input):
-    return base64.urlsafe_b64encode(input).replace(b'=', b'')
+def base64url_encode(raw_bytes):
+    return base64.urlsafe_b64encode(raw_bytes).replace(b'=', b'')
 
 
 parser = argparse.ArgumentParser('Analyse a jwt')
@@ -28,7 +27,6 @@ args = parser.parse_args()
 
 jwt = args.jwt
 pieces = jwt.split('.')
-
 
 
 if len(pieces) < 2:
@@ -47,9 +45,9 @@ print('[*] payload : {}'.format(payload))
 if len(pieces) == 2:
     print('[-] no signature', file=sys.stderr)
     quit()
-else:
-    signature_ = pieces[2]
-    signature = base64url_decode(signature_.encode('utf-8'))
+
+signature_ = pieces[2]
+signature = base64url_decode(signature_.encode('utf-8'))
 
 print('[*] signature : {} ({} len)'.format(signature, len(signature)))
 
@@ -65,6 +63,7 @@ def testkey(key):
     if hmac.compare_digest(hashh, signature):
         print('[+] key found : {}'.format(key.decode('utf-8')))
         quit()
+
 
 with open(args.dict, 'rt') as f:
     i = 0
